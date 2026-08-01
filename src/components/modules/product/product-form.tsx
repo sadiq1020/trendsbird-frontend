@@ -21,6 +21,7 @@ import {
   createProductSchema,
   CreateProductInput,
   UpdateProductInput,
+  VariantInput,
 } from "@/lib/schemas/product.schema";
 import { productApi } from "@/lib/api/product";
 import { brandApi } from "@/lib/api/brand";
@@ -43,6 +44,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
+import { SortableProductMedia, FormMediaAttachment } from "@/components/modules/product/sortable-product-media";
+import { ProductVariantGenerator } from "@/components/modules/product/product-variant-generator";
 
 interface ProductFormProps {
   initialData?: Product | null;
@@ -54,6 +57,18 @@ export function ProductForm({ initialData, onSuccess, onCancel }: ProductFormPro
   const isEditing = !!initialData;
   const [serverError, setServerError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("details");
+
+  // Initial media attachments conversion
+  const initialMediaAttachments: FormMediaAttachment[] = initialData?.media
+    ? initialData.media.map((m) => ({
+        id: m.id || `attach-${m.mediaId}`,
+        mediaId: m.mediaId,
+        media: m.media,
+        isThumbnail: m.isThumbnail,
+        isGallery: m.isGallery,
+        sortOrder: m.sortOrder,
+      }))
+    : [];
 
   // Fetch Brands & Category Tree
   const { data: brandsRes } = useQuery({
@@ -86,13 +101,34 @@ export function ProductForm({ initialData, onSuccess, onCancel }: ProductFormPro
       price: initialData?.price ?? 0,
       salePrice: initialData?.salePrice ?? null,
       stock: initialData?.stock ?? 0,
-      variants: initialData?.variants || [],
-      media: [],
+      variants: initialData?.variants
+        ? initialData.variants.map((v) => ({
+            id: v.id,
+            sku: v.sku,
+            price: v.price,
+            salePrice: v.salePrice ?? null,
+            stock: v.stock,
+            lowStockThreshold: v.lowStockThreshold ?? 0,
+            weight: v.weight ?? 0,
+            active: v.active,
+            attributeValueIds: v.attributeValues.map((av) => av.attributeValueId),
+            media: v.media.map((m) => ({
+              mediaId: m.mediaId,
+              isThumbnail: m.isThumbnail,
+              isGallery: m.isGallery,
+              sortOrder: m.sortOrder,
+            })),
+          }))
+        : [],
+      mediaAttachments: initialMediaAttachments,
     },
   });
 
   const hasVariants = form.watch("hasVariants");
   const selectedCategoryIds: string[] = form.watch("categoryIds") || [];
+  const mediaAttachments: FormMediaAttachment[] = form.watch("mediaAttachments") || [];
+  const variants: VariantInput[] = form.watch("variants") || [];
+  const productName = form.watch("name") || "";
   const isSubmitting = form.formState.isSubmitting;
 
   const handleCategoryToggle = (catId: string, checked: boolean) => {
@@ -105,8 +141,67 @@ export function ProductForm({ initialData, onSuccess, onCancel }: ProductFormPro
     form.setValue("categoryIds", Array.from(current));
   };
 
+  const validateVariantRows = (variantRows: VariantInput[]): string | null => {
+    // 1. Check duplicate SKU in variants
+    const skus = variantRows.map((v) => v.sku.trim().toLowerCase());
+    const uniqueSkus = new Set(skus);
+    if (uniqueSkus.size !== skus.length) {
+      return "Validation Error: Duplicate SKU codes found across variant rows.";
+    }
+
+    // 2. Check sale price > price in variants
+    for (let i = 0; i < variantRows.length; i++) {
+      const v = variantRows[i];
+      if (v.salePrice !== null && v.salePrice !== undefined && v.salePrice > v.price) {
+        return `Validation Error (Variant #${i + 1}): Sale price ($${v.salePrice}) cannot exceed regular price ($${v.price}).`;
+      }
+    }
+
+    // 3. Check duplicate combination of attributeValueIds
+    const comboKeys = variantRows.map((v) =>
+      [...v.attributeValueIds].sort().join("|")
+    );
+    const uniqueComboKeys = new Set(comboKeys);
+    if (uniqueComboKeys.size !== comboKeys.length) {
+      return "Validation Error: Duplicate variant combinations detected. Each variant row must have a unique combination of attribute values.";
+    }
+
+    return null;
+  };
+
   const onSubmit = async (values: any) => {
     setServerError(null);
+
+    // Format top-level media payload
+    const formattedMedia = mediaAttachments.map((m) => ({
+      mediaId: m.mediaId,
+      isThumbnail: m.isThumbnail,
+      isGallery: m.isGallery,
+      sortOrder: m.sortOrder,
+    }));
+
+    // If variable product, validate variant rows
+    if (hasVariants) {
+      if (!values.variants || values.variants.length === 0) {
+        setServerError("A variable product must contain at least one generated variant row.");
+        setActiveTab("variants");
+        return;
+      }
+
+      const variantErr = validateVariantRows(values.variants);
+      if (variantErr) {
+        setServerError(variantErr);
+        setActiveTab("variants");
+        return;
+      }
+    } else {
+      // Validate simple product sale price
+      if (values.salePrice !== null && values.salePrice !== undefined && values.salePrice > values.price) {
+        setServerError("Validation Error: Sale price cannot exceed regular price.");
+        setActiveTab("details");
+        return;
+      }
+    }
 
     try {
       if (isEditing && initialData) {
@@ -121,6 +216,7 @@ export function ProductForm({ initialData, onSuccess, onCancel }: ProductFormPro
           featured: values.featured,
           sortOrder: Number(values.sortOrder) || 0,
           weight: Number(values.weight) || 0,
+          media: formattedMedia,
         };
 
         if (!hasVariants) {
@@ -128,6 +224,8 @@ export function ProductForm({ initialData, onSuccess, onCancel }: ProductFormPro
           updatePayload.price = Number(values.price) || 0;
           updatePayload.salePrice = values.salePrice ? Number(values.salePrice) : null;
           updatePayload.stock = Number(values.stock) || 0;
+        } else {
+          updatePayload.variants = values.variants;
         }
 
         const res = await productApi.updateProduct(initialData.id, updatePayload);
@@ -153,8 +251,8 @@ export function ProductForm({ initialData, onSuccess, onCancel }: ProductFormPro
             featured: values.featured,
             sortOrder: Number(values.sortOrder) || 0,
             hasVariants: true,
-            variants: values.variants && values.variants.length > 0 ? values.variants : [],
-            media: [],
+            variants: values.variants,
+            media: formattedMedia,
           };
         } else {
           createPayload = {
@@ -173,7 +271,7 @@ export function ProductForm({ initialData, onSuccess, onCancel }: ProductFormPro
             price: Number(values.price) || 0,
             salePrice: values.salePrice ? Number(values.salePrice) : null,
             stock: Number(values.stock) || 0,
-            media: [],
+            media: formattedMedia,
           };
         }
 
@@ -253,12 +351,14 @@ export function ProductForm({ initialData, onSuccess, onCancel }: ProductFormPro
             </TabsTrigger>
             <TabsTrigger value="media" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white text-xs gap-1.5">
               <ImageIcon className="w-3.5 h-3.5 text-amber-400" />
-              <span>3. Media Assets</span>
+              <span>3. Media Assets ({mediaAttachments.length})</span>
             </TabsTrigger>
-            <TabsTrigger value="variants" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white text-xs gap-1.5">
-              <Sliders className="w-3.5 h-3.5 text-pink-400" />
-              <span>4. Variants &amp; Inventory</span>
-            </TabsTrigger>
+            {hasVariants && (
+              <TabsTrigger value="variants" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white text-xs gap-1.5">
+                <Sliders className="w-3.5 h-3.5 text-pink-400" />
+                <span>4. Variants ({variants.length})</span>
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* TAB 1: General Details */}
@@ -458,7 +558,7 @@ export function ProductForm({ initialData, onSuccess, onCancel }: ProductFormPro
               <div className="p-4 bg-purple-500/10 border border-purple-500/30 rounded-xl text-purple-300 text-xs flex items-center gap-3">
                 <Info className="w-5 h-5 text-purple-400 shrink-0" />
                 <span>
-                  <strong>Variable Product Mode Active:</strong> Individual SKUs, regular prices, sale prices, and stock inventory will be configured under the <strong>Variants &amp; Inventory</strong> tab.
+                  <strong>Variable Product Mode Active:</strong> Individual SKUs, regular prices, sale prices, and stock inventory will be configured under the <strong>Variants</strong> tab.
                 </span>
               </div>
             )}
@@ -573,27 +673,24 @@ export function ProductForm({ initialData, onSuccess, onCancel }: ProductFormPro
             </div>
           </TabsContent>
 
-          {/* TAB 3: Media Assets Placeholder */}
+          {/* TAB 3: Media & Gallery */}
           <TabsContent value="media" className="pt-4 space-y-4">
-            <div className="p-6 bg-slate-950 border border-slate-800 rounded-xl text-center space-y-2">
-              <ImageIcon className="w-8 h-8 text-amber-400 mx-auto" />
-              <h4 className="text-sm font-bold text-slate-200">Media Assets &amp; Gallery Attachment</h4>
-              <p className="text-xs text-slate-400 max-w-md mx-auto">
-                Primary thumbnail assignment and multi-image gallery ordering will be enabled in Part 2.
-              </p>
-            </div>
+            <SortableProductMedia
+              value={mediaAttachments}
+              onChange={(updated) => form.setValue("mediaAttachments", updated)}
+            />
           </TabsContent>
 
-          {/* TAB 4: Variants & Inventory Placeholder */}
-          <TabsContent value="variants" className="pt-4 space-y-4">
-            <div className="p-6 bg-slate-950 border border-slate-800 rounded-xl text-center space-y-2">
-              <Sliders className="w-8 h-8 text-pink-400 mx-auto" />
-              <h4 className="text-sm font-bold text-slate-200">Variant Combinations &amp; SKU Matrix</h4>
-              <p className="text-xs text-slate-400 max-w-md mx-auto">
-                Automatic variant matrix generator based on attributes will be enabled in Part 2.
-              </p>
-            </div>
-          </TabsContent>
+          {/* TAB 4: Variants Matrix */}
+          {hasVariants && (
+            <TabsContent value="variants" className="pt-4 space-y-4">
+              <ProductVariantGenerator
+                productName={productName}
+                variants={variants}
+                onChange={(updatedVariants) => form.setValue("variants", updatedVariants)}
+              />
+            </TabsContent>
+          )}
         </Tabs>
 
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
