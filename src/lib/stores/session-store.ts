@@ -17,7 +17,7 @@ interface SessionState {
 const normalizeRole = (roleData: Role | string | undefined | null): Role | null => {
   if (!roleData) return null;
   if (typeof roleData === 'string') {
-    return { name: roleData };
+    return { id: 'session-role', name: roleData, status: true };
   }
   return roleData;
 };

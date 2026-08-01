@@ -26,26 +26,6 @@ export interface User {
   updatedAt?: string;
 }
 
-export interface Role {
-  id?: string;
-  name: string;
-  description?: string | null;
-  isSystem?: boolean;
-  permissions?: string[] | any[];
-}
-
-export interface SessionResponse {
-  user: User;
-  role: Role | string;
-  permissions: string[];
-}
-
-export interface LoginResponse {
-  user: User;
-  accessToken: string;
-  refreshToken: string;
-}
-
 export interface PermissionAction {
   id: string;
   name: string;
@@ -61,4 +41,27 @@ export interface PermissionGroup {
   permissions: PermissionAction[];
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface Role {
+  id: string;
+  name: string;
+  description?: string | null;
+  status: boolean;
+  userCount?: number;
+  permissions?: PermissionAction[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface SessionResponse {
+  user: User;
+  role: Role | string;
+  permissions: string[];
+}
+
+export interface LoginResponse {
+  user: User;
+  accessToken: string;
+  refreshToken: string;
 }
