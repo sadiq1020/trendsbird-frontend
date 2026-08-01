@@ -78,6 +78,38 @@ export interface Media {
   updatedAt?: string;
 }
 
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+  image?: string | null;
+  parentId?: string | null;
+  parent?: { id: string; name: string; slug: string } | null;
+  childrenCount?: number;
+  productCount?: number;
+  active: boolean;
+  sortOrder: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CategoryTreeNode extends Category {
+  children: CategoryTreeNode[];
+}
+
+export interface Brand {
+  id: string;
+  name: string;
+  slug: string;
+  logo?: string | null;
+  status: boolean;
+  description?: string | null;
+  productCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface SessionResponse {
   user: User;
   role: Role | string;
