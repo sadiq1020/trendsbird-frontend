@@ -15,17 +15,6 @@ export interface ApiResponse<T = any> {
   };
 }
 
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  avatar?: string | null;
-  status?: 'ACTIVE' | 'INACTIVE';
-  roleId?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
 export interface PermissionAction {
   id: string;
   name: string;
@@ -50,6 +39,20 @@ export interface Role {
   status: boolean;
   userCount?: number;
   permissions?: PermissionAction[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  avatar?: string | null;
+  phone?: string | null;
+  gender?: string | null;
+  active: boolean;
+  roleId: string;
+  role?: Role;
   createdAt?: string;
   updatedAt?: string;
 }

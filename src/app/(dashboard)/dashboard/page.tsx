@@ -35,7 +35,9 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-xl font-bold text-emerald-400">{role?.name || "N/A"}</div>
-            <p className="text-xs text-slate-400 mt-1">Status: {user?.status}</p>
+            <p className="text-xs text-slate-400 mt-1">
+              Status: {user?.active !== false ? "ACTIVE" : "INACTIVE"}
+            </p>
           </CardContent>
         </Card>
 
