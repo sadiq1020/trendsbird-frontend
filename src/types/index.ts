@@ -57,6 +57,27 @@ export interface User {
   updatedAt?: string;
 }
 
+export type MediaType = 'IMAGE' | 'VIDEO';
+
+export interface Media {
+  id: string;
+  fileName: string;
+  storedPath: string;
+  publicUrl: string;
+  mimeType: string;
+  type: MediaType;
+  size: number;
+  width?: number | null;
+  height?: number | null;
+  thumbnailPath?: string | null;
+  thumbnailUrl?: string | null;
+  altText?: string | null;
+  title?: string | null;
+  uploadedById: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface SessionResponse {
   user: User;
   role: Role | string;
