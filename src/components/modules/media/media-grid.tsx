@@ -240,6 +240,12 @@ export function MediaGrid({
                     <img
                       src={thumbnailSrc}
                       alt={item.altText || item.title || item.fileName}
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        if (target.src !== item.publicUrl) {
+                          target.src = item.publicUrl;
+                        }
+                      }}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   ) : (
