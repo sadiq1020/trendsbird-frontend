@@ -219,30 +219,46 @@ export function UserForm({ initialData, onSuccess, onCancel }: UserFormProps) {
           <FormField
             control={form.control}
             name="roleId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-slate-200">Assign Role *</FormLabel>
-                <Select
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  disabled={isSelf || isRolesLoading}
-                >
-                  <FormControl>
-                    <SelectTrigger className="bg-slate-950 border-slate-800 text-slate-100">
-                      <SelectValue placeholder="Select an explicit role..." />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
-                    {activeRoles.map((role) => (
-                      <SelectItem key={role.id} value={role.id}>
-                        {role.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage className="text-red-400" />
-              </FormItem>
-            )}
+            render={({ field }) => {
+              const matchedRole =
+                activeRoles.find((r) => r.id === field.value) || initialData?.role;
+              const roleDisplayName = matchedRole?.name || "";
+
+              return (
+                <FormItem>
+                  <FormLabel className="text-slate-200">Assign Role *</FormLabel>
+                  {isSelf ? (
+                    <Input
+                      value={roleDisplayName || "Super Admin"}
+                      disabled
+                      className="bg-slate-950 border-slate-800 text-slate-400 cursor-not-allowed"
+                    />
+                  ) : (
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      disabled={isRolesLoading}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="bg-slate-950 border-slate-800 text-slate-100">
+                          <SelectValue placeholder="Select an explicit role...">
+                            {roleDisplayName || field.value}
+                          </SelectValue>
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
+                        {activeRoles.map((role) => (
+                          <SelectItem key={role.id} value={role.id}>
+                            {role.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  <FormMessage className="text-red-400" />
+                </FormItem>
+              );
+            }}
           />
         </div>
 
