@@ -45,3 +45,20 @@ export interface LoginResponse {
   accessToken: string;
   refreshToken: string;
 }
+
+export interface PermissionAction {
+  id: string;
+  name: string;
+  groupId: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface PermissionGroup {
+  id: string;
+  name: string;
+  description?: string | null;
+  permissions: PermissionAction[];
+  createdAt?: string;
+  updatedAt?: string;
+}
