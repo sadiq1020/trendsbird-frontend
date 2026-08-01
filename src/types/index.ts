@@ -110,6 +110,94 @@ export interface Brand {
   updatedAt?: string;
 }
 
+export type AttributeType = 'DROPDOWN' | 'RADIO' | 'CHECKBOX' | 'COLOR_SWATCH' | 'IMAGE_SWATCH';
+
+export interface AttributeValue {
+  id: string;
+  value: string;
+  slug: string;
+  referenceValue?: string | null;
+  attributeId: string;
+  variantCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Attribute {
+  id: string;
+  name: string;
+  slug: string;
+  type: AttributeType;
+  values: AttributeValue[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type StockStatus = 'IN_STOCK' | 'OUT_OF_STOCK' | 'ON_BACKORDER';
+
+export interface MediaAttachment {
+  id: string;
+  mediaId: string;
+  media: Media;
+  isThumbnail: boolean;
+  isGallery: boolean;
+  sortOrder: number;
+}
+
+export interface ProductVariantAttributeValue {
+  attributeId: string;
+  attributeName: string;
+  attributeValueId: string;
+  value: string;
+  slug: string;
+  referenceValue?: string | null;
+}
+
+export interface ProductVariant {
+  id: string;
+  productId: string;
+  sku: string;
+  price: number;
+  salePrice?: number | null;
+  stock: number;
+  stockStatus: StockStatus;
+  lowStockThreshold?: number | null;
+  weight?: number | null;
+  active: boolean;
+  attributeValues: ProductVariantAttributeValue[];
+  media: MediaAttachment[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Product {
+  id: string;
+  name: string;
+  slug: string;
+  sku?: string | null;
+  shortDescription?: string | null;
+  longDescription?: string | null;
+  hasVariants: boolean;
+  price?: number | null;
+  salePrice?: number | null;
+  stock?: number | null;
+  stockStatus?: StockStatus | null;
+  priceMin?: number | null;
+  priceMax?: number | null;
+  weight?: number | null;
+  active: boolean;
+  featured: boolean;
+  sortOrder: number;
+  brandId?: string | null;
+  brand?: Brand | null;
+  categories: Category[];
+  thumbnail?: Media | null;
+  media: MediaAttachment[];
+  variants: ProductVariant[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface SessionResponse {
   user: User;
   role: Role | string;
