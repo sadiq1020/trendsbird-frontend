@@ -67,7 +67,11 @@ export default function LoginPage() {
 
   const fillTestAccount = (email: string) => {
     form.setValue('email', email);
-    form.setValue('password', 'Password123!');
+    if (email === 'admin@trendsbird.com') {
+      form.setValue('password', 'SuperAdmin123!');
+    } else {
+      form.setValue('password', 'Password123!');
+    }
     setServerError(null);
   };
 

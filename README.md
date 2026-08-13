@@ -36,8 +36,8 @@ npm run build
 
 | Account Role | Email Credentials | Password | Permissions Scope |
 | :--- | :--- | :--- | :--- |
-| **Super Admin** | `superadmin@trendsbird.com` | `SuperAdmin123!` | All permissions (`*:watch`, `*:create`, `*:update`, `*:delete`) |
-| **Catalog Limited Manager** | `catalog@trendsbird.com` | `Catalog123!` | Limited catalog access (`category:*`, `brand:*`, `attribute:*`, `product:*`). Has NO access to `user:*`, `role:*`, `permission:*` screens (triggers 403 Forbidden UI guards). |
+| **Super Admin** | `admin@trendsbird.com` | `SuperAdmin123!` | All permissions (`*:watch`, `*:create`, `*:update`, `*:delete`) |
+| **Catalog Limited Manager** | `catalog@trendsbird.com` | `Password123!` | Limited catalog access (`category:*`, `brand:*`, `attribute:*`, `product:*`). Has NO access to `user:*`, `role:*`, `permission:*` screens (triggers 403 Forbidden UI guards). |
 
 ---
 
